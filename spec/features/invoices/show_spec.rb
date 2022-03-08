@@ -108,25 +108,47 @@ end
 describe 'shows the total revenue for the invoice including the bulk discounts' do
   before do
     @merchant1 = Merchant.create!(name: 'Hair Care')
+    @bulk_1 = @merchant1.bulk_discounts.create!(percentage: 10, threshold: 10)
+    @bulk_2 = @merchant1.bulk_discounts.create!(percentage: 15, threshold: 15)
 
     @item_1 = Item.create!(name: 'Shampoo', description: 'This washes your hair', unit_price: 10,
                            merchant_id: @merchant1.id, status: 1)
-    @item_2 = Item.create!(name: 'Conditioner', description: 'This makes your hair shiny', unit_price: 8,
+    @item_2 = Item.create!(name: 'Conditioner', description: 'This makes your hair shiny', unit_price: 10,
                            merchant_id: @merchant1.id)
 
+    @merchant2 = Merchant.create!(name: 'Hair')
+    @item_3 = Item.create!(name: 'Shampoo', description: 'This washes your hair', unit_price: 10,
+                           merchant_id: @merchant2.id, status: 1)
+    @item_4 = Item.create!(name: 'Conditioner', description: 'This makes your hair shiny', unit_price: 10,
+                           merchant_id: @merchant2.id)
+
     @customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+
     @invoice_1 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
-    @invoice_2 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
     @ii_1 = InvoiceItem.create!(invoice_id: @invoice_1.id, item_id: @item_1.id, quantity: 10, unit_price: 10,
                                 status: 2)
     @ii_2 = InvoiceItem.create!(invoice_id: @invoice_1.id, item_id: @item_2.id, quantity: 5, unit_price: 10,
                                 status: 2)
-    @ii_3 = InvoiceItem.create!(invoice_id: @invoice_2.id, item_id: @item_1.id,
-                                quantity: 5, unit_price: 10, status: 2)
+
+    @invoice_2 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
+    @ii_3 = InvoiceItem.create!(invoice_id: @invoice_2.id, item_id: @item_1.id, quantity: 5, unit_price: 10, status: 2)
     @ii_4 = InvoiceItem.create!(invoice_id: @invoice_2.id, item_id: @item_2.id, quantity: 5, unit_price: 10, status: 2)
 
-    @bulk_1 = @merchant1.bulk_discounts.create!(percentage: 10, threshold: 10)
-    @bulk_2 = @merchant1.bulk_discounts.create!(percentage: 15, threshold: 15)
+    @invoice_3 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
+    @ii_5 = InvoiceItem.create!(invoice_id: @invoice_3.id, item_id: @item_1.id, quantity: 12, unit_price: 10, status: 2)
+    @ii_6 = InvoiceItem.create!(invoice_id: @invoice_3.id, item_id: @item_2.id, quantity: 15, unit_price: 10, status: 2)
+
+    @invoice_4 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
+    @ii_7 = InvoiceItem.create!(invoice_id: @invoice_4.id, item_id: @item_3.id, quantity: 15, unit_price: 10,
+                                status: 2)
+    @ii_8 = InvoiceItem.create!(invoice_id: @invoice_4.id, item_id: @item_4.id, quantity: 15, unit_price: 10,
+                                status: 2)
+
+    @invoice_5 = Invoice.create!(customer_id: @customer_1.id, status: 2, created_at: '2012-03-27 14:54:09')
+    @ii_9 = InvoiceItem.create!(invoice_id: @invoice_5.id, item_id: @item_3.id, quantity: 15, unit_price: 10,
+                                status: 2)
+    @ii_10 = InvoiceItem.create!(invoice_id: @invoice_5.id, item_id: @item_1.id, quantity: 10, unit_price: 10,
+                                 status: 2)
   end
   it 'applys a bulk discount' do
     visit merchant_invoice_path(@merchant1, @invoice_1)
@@ -138,9 +160,31 @@ describe 'shows the total revenue for the invoice including the bulk discounts' 
 
   it 'no bulk discount applied' do
     visit merchant_invoice_path(@merchant1, @invoice_2)
+
     expect(page).to have_content('Total Revenue Before Discounts (if applied): $100.00')
     expect(page).to have_content('Discounts Applied: $0.00')
     expect(page).to have_content('Total Revenue After Discounts: $100.00')
+  end
+
+  it 'applies two different discount in one invoice based on quantities' do
+    visit merchant_invoice_path(@merchant1, @invoice_3)
+    expect(page).to have_content('Total Revenue Before Discounts (if applied): $270.00')
+    expect(page).to have_content('Discounts Applied: $34.50')
+    expect(page).to have_content('Total Revenue After Discounts: $235.50')
+  end
+
+  it 'does not apply discount to a different merchant with no bulk discounts' do
+    visit merchant_invoice_path(@merchant2, @invoice_4)
+    expect(page).to have_content('Total Revenue Before Discounts (if applied): $300.00')
+    expect(page).to have_content('Discounts Applied: $0.00')
+    expect(page).to have_content('Total Revenue After Discounts: $300.00')
+  end
+
+  it 'applies discounts to items the belong to the merchant with a discount' do
+    visit merchant_invoice_path(@merchant2, @invoice_5)
+    expect(page).to have_content('Total Revenue Before Discounts (if applied): $250.00')
+    expect(page).to have_content('Discounts Applied: $10.00')
+    expect(page).to have_content('Total Revenue After Discounts: $240.00')
   end
 
   it 'has a link to the bulk item show page' do
