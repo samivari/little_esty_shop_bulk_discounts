@@ -1,7 +1,7 @@
 # Little Esty Shop
 
 "Little Esty Shop" is a group project that requires students to build a fictitious e-commerce platform where merchants and admins can manage inventory and fulfill customer invoices.
-As a final project, "Bulk Discounts is an exstention of the project, where merchents have bulk discounts to apply to their invoices.
+As a final project, "Bulk Discounts" is an exstention of the project, where merchents have bulk discounts to apply to their invoices.
 
 
 ## Learning Goals
